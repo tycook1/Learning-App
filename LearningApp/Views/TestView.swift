@@ -13,9 +13,10 @@ struct TestView: View {
     @State var selectedAnswerIndex: Int?
     @State var numCorrect = 0
     @State var submitted = false
+    @State var showResults = false
     
     var body: some View {
-        if model.currentQuestion != nil {
+        if model.currentQuestion != nil && showResults == false {
             
             VStack(alignment: .leading) {
                 // Question number
@@ -66,7 +67,7 @@ struct TestView: View {
                                                 .frame(height: 48)
                                         }
                                         else {
-                                            RectangleCard(color: .green)
+                                            RectangleCard(color: .white)
                                                 .frame(height: 48)
                                         }
                                     }
@@ -82,12 +83,35 @@ struct TestView: View {
                 
                 // Submit Button
                 Button {
-                    // Change submitted state to true
-                    submitted = true
                     
-                    // Check the answer and increment the counter if correct
-                    if selectedAnswerIndex == model.currentQuestion!.correctIndex {
-                        numCorrect += 1
+                    // Check if answer has been submitted
+                    if submitted == true {
+                        
+                        // Check if it's the last question
+                        if model.currentQuestionIndex + 1 == model.currentModule!.test.questions.count {
+                            
+                            // Show the results
+                            showResults = true
+                        }
+                        else {
+                            // Answer has already been submitted, move to next question
+                            model.nextQuestion()
+                            
+                            // Reset properties
+                            submitted = false
+                            selectedAnswerIndex = nil
+                        }
+                    }
+                    else {
+                        // Submit the answer
+                        
+                        // Change submitted state to true
+                        submitted = true
+                        
+                        // Check the answer and increment the counter if correct
+                        if selectedAnswerIndex == model.currentQuestion!.correctIndex {
+                            numCorrect += 1
+                        }
                     }
                 } label: {
                     
@@ -96,7 +120,7 @@ struct TestView: View {
                         RectangleCard(color: .green)
                             .frame(height: 48)
                         
-                        Text("Submit")
+                        Text(buttonText)
                             .bold()
                             .foregroundColor(.white)
                     }
@@ -107,9 +131,30 @@ struct TestView: View {
             }
             .navigationBarTitle("\(model.currentModule?.category ?? "") Test")
         }
+        else if showResults == true {
+            // If current question is nil, we show the result view
+            TestResultView(numCorrect: numCorrect)
+        }
         else {
-            // Test hasn't loaded yet
             ProgressView()
+        }
+    }
+    
+    var buttonText: String {
+        
+        // Check if answer has been submitted
+        if submitted == true {
+            if model.currentQuestionIndex + 1 == model.currentModule!.test.questions.count {
+                // This is the last question
+                return "Finish"
+            }
+            else {
+                // There is a next question
+                return "Next"
+            }
+        }
+        else {
+            return "Submit"
         }
     }
 }
